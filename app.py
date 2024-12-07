@@ -1,7 +1,7 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
-
+from datetime import datetime, timezone
 db = SQLAlchemy()
 
 app = Flask(__name__)
@@ -47,8 +47,8 @@ def post_blog():
         title = request.json['title']
         content = request.json['content']
         category = request.json['category']
-        createdAt = request.json['createdAt']
-        updatedAt = request.json['updatedAt']
+        createdAt = datetime.now(timezone.utc)
+        updatedAt = datetime.now(timezone.utc)
 
         record = Blog(
             title,
