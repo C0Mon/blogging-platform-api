@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import text
 
@@ -11,26 +11,24 @@ db_name = 'blog.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_name
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-
 db.init_app(app)
 
+#NO TABLE?????
 class Blog(db.Model):
-    __tablename__ = 'blog'
+    __tablename__ = 'Blog'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String)
     content = db.Column(db.String)
     category = db.Column(db.String)
-    tags = db.Column(db.Blob)
-    updatedAt = db.Column(db.String)
     createdAt = db.Column(db.String)
+    updatedAt = db.Column(db.String)
     
-    def __init__(self, title, content, category, tags, updatedAt, createdAt):
+    def __init__(self, title, content, category, updatedAt, createdAt):
         self.title = title
         self.content = content
         self.category = category
-        self.tags = tags
-        self.updatedAt = updatedAt
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
     
 @app.get("/posts")
 def get_blog():
@@ -39,7 +37,6 @@ def get_blog():
         "title": "My First Blog Post",
         "content": "This is the content of my first blog post.",
         "category": "Technology",
-        "tags": ["Tech", "Programming"],
         "createdAt": "2021-09-01T12:00:00Z",
         "updatedAt": "2021-09-01T12:00:00Z"
     }
@@ -47,8 +44,24 @@ def get_blog():
 @app.post("/posts")
 def post_blog():
     try:
-        db.session.query(text('1')).from_statement(text('SELECT 1')).all()
-        return '<h1>It works.</h1>'
+        title = request.json['title']
+        content = request.json['content']
+        category = request.json['category']
+        createdAt = request.json['createdAt']
+        updatedAt = request.json['updatedAt']
+
+        record = Blog(
+            title,
+            content,
+            category,
+            createdAt,
+            updatedAt
+        )
+        db.session.add(record)
+        db.session.commit()
+        
+        message = f"Your blog {title} has been posted"
+        return message
     except Exception as e:
         error_text = "<p>The error:<br>" + str(e) + "</p>"
         hed = '<h1>Something is broken.</h1>'
