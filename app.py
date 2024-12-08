@@ -1,6 +1,5 @@
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.sql import text
 from datetime import datetime, timezone
 db = SQLAlchemy()
 
@@ -17,7 +16,7 @@ db.init_app(app)
 def error(e: Exception) -> str:
     errorText = "<p>The error:<br>" + str(e) + "</p>"
     hed = '<h1>Something is broken.</h1>'
-    return hed + errorText
+    return (hed + errorText),400
 
 class Blog(db.Model):
     __tablename__ = 'Blog'
@@ -44,7 +43,7 @@ class Blog(db.Model):
             "createdAt": self.createdAt,
             "updatedAt": self.updatedAt
         }
-    
+
 @app.get("/posts")
 def get_all_blogs():
     try:
@@ -102,5 +101,14 @@ def update_blog():
     except Exception as e:
         return error(e)
 
+@app.delete("/posts/<int:id>")
+def delete_blog(id: int):
+    try:
+        blog = db.session.query(Blog).filter_by(id = id).one()
+        db.session.delete(blog)
+        db.session.commit()
+        return "Your blog has been deleted"
+    except Exception as e:
+        return error(e)
 if __name__ == '__main__':
     app.run(debug=True)
