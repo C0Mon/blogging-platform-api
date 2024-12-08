@@ -13,7 +13,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_name
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 db.init_app(app)
-update_sql = "select"
+
+def error(e: Exception) -> str:
+    errorText = "<p>The error:<br>" + str(e) + "</p>"
+    hed = '<h1>Something is broken.</h1>'
+    return hed + errorText
+
 class Blog(db.Model):
     __tablename__ = 'Blog'
     id = db.Column(db.Integer, primary_key=True)
@@ -41,13 +46,24 @@ class Blog(db.Model):
         }
     
 @app.get("/posts")
-def get_blog():
+def get_all_blogs():
     try:
-        post = db.session.execute(db.select(Blog).filter_by(title=request.json['title'])).one()
-        print(post)
-    except:
-        return "wtf"
-     
+        posts = db.session.query(Blog).all()
+        newList = []
+        for post in posts:
+            newList.append(post.dictionary())
+        return newList
+    except Exception as e:
+        return error(e)
+
+@app.get("/posts/<int:id>")
+def get_blog(id: int):
+    try:
+        post = db.session.query(Blog).filter_by(id = id).one()
+        return post.dictionary()
+    except Exception as e:
+        return error(e)
+
 
 @app.post("/posts")
 def post_blog():
@@ -71,9 +87,7 @@ def post_blog():
         message = f"Your blog {title} has been posted"
         return message
     except Exception as e:
-        errorText = "<p>The error:<br>" + str(e) + "</p>"
-        hed = '<h1>Something is broken.</h1>'
-        return hed + errorText
+        return error(e)
 
 @app.put("/posts")
 def update_blog():
@@ -86,9 +100,7 @@ def update_blog():
         return post.dictionary()  
 
     except Exception as e:
-        errorText = "<p>The error:<br>" + str(e) + "</p>"
-        hed = '<h1>Something is broken.</h1>'
-        return hed + errorText
+        return error(e)
 
 if __name__ == '__main__':
     app.run(debug=True)
