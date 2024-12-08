@@ -11,35 +11,43 @@ db_name = 'blog.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_name
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-db.init_app(app)
 
-#NO TABLE?????
+db.init_app(app)
+update_sql = "select"
 class Blog(db.Model):
     __tablename__ = 'Blog'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String)
+    title = db.Column(db.String, unique=True)
     content = db.Column(db.String)
     category = db.Column(db.String)
     createdAt = db.Column(db.String)
     updatedAt = db.Column(db.String)
     
-    def __init__(self, title, content, category, updatedAt, createdAt):
+    def __init__(self, title, content, category, updatedAt, createdAt) -> None:
         self.title = title
         self.content = content
         self.category = category
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+
+    def dictionary(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "category": self.category,
+            "createdAt": self.createdAt,
+            "updatedAt": self.updatedAt
+        }
     
 @app.get("/posts")
 def get_blog():
-    return {
-        "id": 1,
-        "title": "My First Blog Post",
-        "content": "This is the content of my first blog post.",
-        "category": "Technology",
-        "createdAt": "2021-09-01T12:00:00Z",
-        "updatedAt": "2021-09-01T12:00:00Z"
-    }
+    try:
+        post = db.session.execute(db.select(Blog).filter_by(title=request.json['title'])).one()
+        print(post)
+    except:
+        return "wtf"
+     
 
 @app.post("/posts")
 def post_blog():
@@ -63,9 +71,24 @@ def post_blog():
         message = f"Your blog {title} has been posted"
         return message
     except Exception as e:
-        error_text = "<p>The error:<br>" + str(e) + "</p>"
+        errorText = "<p>The error:<br>" + str(e) + "</p>"
         hed = '<h1>Something is broken.</h1>'
-        return hed + error_text
+        return hed + errorText
+
+@app.put("/posts")
+def update_blog():
+    try:
+        post = db.session.query(Blog).filter_by(title = request.json['title']).one()
+        setattr(post, "title", request.json['title'])
+        setattr(post, "content", request.json['content'])
+        setattr(post, "category", request.json['category'])
+        db.session.commit()
+        return post.dictionary()  
+
+    except Exception as e:
+        errorText = "<p>The error:<br>" + str(e) + "</p>"
+        hed = '<h1>Something is broken.</h1>'
+        return hed + errorText
 
 if __name__ == '__main__':
     app.run(debug=True)

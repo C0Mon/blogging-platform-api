@@ -1,2 +1,4 @@
 .venv
 /sql
+/instance
+/__pycache__
